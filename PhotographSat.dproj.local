@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.791,C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas=D:\Lagrange\projects\PhotographSat\Photograph.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.216,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.543,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.992,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.381,C:\Users\Админ\Documents\RAD Studio\Projects\Project6.dproj=D:\Lagrange\projects\PhotographSat\PhotographSat.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.791,C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.dfm=D:\Lagrange\projects\PhotographSat\Photograph.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.839,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.685,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+  </Transactions>
+</BorlandProject>
