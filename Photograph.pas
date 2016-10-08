@@ -15,14 +15,10 @@ type
     Series1: TPointSeries;
     maxDistance: TEdit;
     maxDistanceLabel: TLabel;
-    satelliteNumberLabel: TLabel;
-    satelliteNumber: TEdit;
     timeSampleLabel: TLabel;
     timeSample: TEdit;
     predictionTimeLabel: TLabel;
     predictionTime: TEdit;
-    Chart2: TChart;
-    PointSeries1: TPointSeries;
     clearDiagrams: TCheckBox;
     currentPredictionDay: TLabel;
         {Запускает программу построения диаграммы}
@@ -53,7 +49,7 @@ var
     stepNum: integer;
     spaceNum, spaceCount: integer;
     Xstart, Xend: TXYZVxVyVz;
-    satMeetingSeries, closeOrbsSeries : array of TPointSeries;
+    satMeetingSeries : array of TPointSeries;
     wasCloseToPhotograph: array of boolean; // запись того, с какими КО было сближение фотографа
     distBetweenSats, maxDist, R: Double;
     dt, satNumber, metSatNum, predictionDays: integer;
@@ -78,7 +74,6 @@ begin
     satNumber := length(satOrbs);
 
     setLength(satMeetingSeries,length(satOrbs));
-    setLength(closeOrbsSeries,length(satOrbs));
 
     // создание трендов, изображающих сближения КО
     for isat := 0 to length(satOrbs) - 1 do begin
@@ -87,10 +82,6 @@ begin
             satMeetingSeries[isat].ParentChart := Chart1;
             satMeetingSeries[isat].Pointer.Size := 3;
             satMeetingSeries[isat].Pointer.Style := psCircle;
-            closeOrbsSeries[isat] := TPointSeries.Create(Self);
-            closeOrbsSeries[isat].ParentChart := Chart2;
-            closeOrbsSeries[isat].Pointer.Size := 3;
-            closeOrbsSeries[isat].Pointer.Style := psCircle;
         end;
     end;
 
@@ -114,28 +105,26 @@ begin
 
         // Прогноз движения всех КО на следующие dt секунд
         for isat := 1 to satNumber - 1 do begin
-            prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
-                      satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
-                      0, seconds,
-                      satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
-                      satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
-            GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
-            satOrbs[isat].JDDouble := satOrbs[isat].JDDouble + dt/86400;
+            if not wasCloseToPhotograph[isat] then begin
+                prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
+                          satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+                          0, seconds,
+                          satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
+                          satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
+                GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
+                satOrbs[isat].JDDouble := satOrbs[isat].JDDouble + dt/86400;
 
-            distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
+                distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
 
-            minDistanceBetweenOrbits(photoOrbTemp, satOrbTemp, r11, r12, r21, r22, p11, p12, p21, p22);
+                minDistanceBetweenOrbits(photoOrbTemp, satOrbTemp, r11, r12, r21, r22, p11, p12, p21, p22);
 
-            if (abs(r11 - r21) < maxDist) or (abs(r12 - r22) < maxDist) then begin
-                closeOrbsSeries[isat].AddXY(seconds, isat, '', clRed);
-            end;
+                if distBetweenSats <= maxDist then begin
+                    satMeetingSeries[isat].AddXY(seconds, isat, '', clGreen);
 
-            if distBetweenSats <= maxDist then begin
-                satMeetingSeries[isat].AddXY(seconds, isat, '', clGreen);
-
-                if not wasCloseToPhotograph[isat] then begin
-                    wasCloseToPhotograph[isat] := True;
-                    inc(metSatNum);
+                    if not wasCloseToPhotograph[isat] then begin
+                        wasCloseToPhotograph[isat] := True;
+                        inc(metSatNum);
+                    end;
                 end;
             end;
         end;
@@ -165,7 +154,6 @@ begin
         for isat := 0 to length(satOrbs) - 1 do begin
             if isat <> 0 then begin
                 satMeetingSeries[isat].Destroy;
-                closeOrbsSeries[isat].Destroy;
             end;
         end;
     end;
