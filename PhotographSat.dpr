@@ -2,7 +2,8 @@ program PhotographSat;
 
 uses
   Vcl.Forms,
-  Photograph in 'Photograph.pas' {Form4};
+  Photograph in 'Photograph.pas' {Form4},
+  sat_proc in 'sat_proc.pas';
 
 {$R *.res}
 
