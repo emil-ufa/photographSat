@@ -1,6 +1,7 @@
 object Form4: TForm4
   Left = 0
   Top = 0
+  Align = alTop
   Caption = #1044#1080#1072#1075#1088#1072#1084#1084#1099' '#1089#1087#1091#1090#1085#1080#1082#1072'-'#1092#1086#1090#1086#1075#1088#1072#1092#1072
   ClientHeight = 882
   ClientWidth = 1440
@@ -47,30 +48,48 @@ object Form4: TForm4
     Height = 13
     Caption = #1058#1077#1082#1091#1097#1080#1081' '#1076#1077#1085#1100' '#1087#1088#1086#1075#1085#1086#1079#1072': 0'
   end
-  object Button1: TButton
+  object spottedSatListLabel: TLabel
+    Left = 1144
+    Top = 104
+    Width = 241
+    Height = 26
+    Caption = #1057#1087#1080#1089#1086#1082' '#1089#1092#1086#1090#1086#1075#1088#1072#1092#1080#1088#1086#1074#1072#1085#1085#1099#1093' '#1050#1054' ('#1076#1077#1085#1100', id '#1050#1054', '#1074#1088#1077#1084#1103' '#1086#1090#1084#1077#1090#1082#1080')'
+    WordWrap = True
+  end
+  object startButton: TButton
     Left = 840
     Top = 33
     Width = 129
     Height = 25
     Caption = #1047#1072#1087#1091#1089#1090#1080#1090#1100' '#1087#1088#1086#1075#1085#1086#1079
     TabOrder = 0
-    OnClick = Button1Click
+    OnClick = startButtonClick
   end
   object Chart1: TChart
-    Left = 31
+    Left = 40
     Top = 136
-    Width = 1394
+    Width = 1098
     Height = 729
+    Legend.Visible = False
     Title.Text.Strings = (
       #1044#1080#1072#1075#1088#1072#1084#1084#1072' '#1089#1073#1083#1080#1078#1077#1085#1080#1081' '#1089' '#1092#1086#1090#1086#1075#1088#1072#1092#1086#1084)
+    BottomAxis.Title.Caption = #1042#1088#1077#1084#1103', '#1089#1091#1090#1082#1080
+    BottomAxis.Title.Position = tpEnd
     LeftAxis.Automatic = False
     LeftAxis.AutomaticMaximum = False
     LeftAxis.AutomaticMinimum = False
     LeftAxis.Maximum = 51.000000000000000000
+    LeftAxis.Title.Caption = #1053#1086#1084#1077#1088' '#1089#1087#1091#1090#1085#1080#1082#1072
+    LeftAxis.Title.Position = tpEnd
     View3D = False
     Zoom.Animated = True
     TabOrder = 1
     DefaultCanvas = 'TGDIPlusCanvas'
+    PrintMargins = (
+      15
+      24
+      15
+      24)
     ColorPaletteIndex = 15
     object Series1: TPointSeries
       Title = 'Graph'
@@ -120,5 +139,13 @@ object Form4: TForm4
     Height = 17
     Caption = #1054#1095#1080#1089#1090#1080#1090#1100' '#1076#1080#1072#1075#1088#1072#1084#1084#1099
     TabOrder = 5
+  end
+  object spottedSatList: TListBox
+    Left = 1144
+    Top = 136
+    Width = 241
+    Height = 201
+    ItemHeight = 13
+    TabOrder = 6
   end
 end

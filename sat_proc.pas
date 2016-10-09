@@ -2,10 +2,11 @@ unit sat_proc;
 
 interface
 
-uses Lagrange, bal_types, math, CatDB, astronom, prognozt;
+uses Lagrange, bal_types, math, CatDB, astronom, System.SysUtils, prognozt;
 
 type
    TSatOrb = record
+        id: Integer;
         JDDouble: Double;
         Kdelta: Double;
         orbX: TXYZVxVyVz;
@@ -19,7 +20,102 @@ type
     function distanceBetweenSatellites(x1, x2: TXYZVxVyVz; dt : Double): Double;
     procedure minDistanceBetweenOrbits(orb1, orb2 : TIOrb; var r11, r12, r21, r22, p11, p12, p21, p22: Double);
     procedure initSatDatabase(pathToOrbFiles, fileNameORB: string; var satOrbs : TSatOrbBase);
+    function dateForLog() : String;
+    function calculateEa(orbK: TIOrb) : double;
+    function timeBetweenDifferentV(orbK: TIorb; v1, v2: double) : double;
+    function setKeplerOrb(a, e, i, ap, ra, v : double) : TIorb;
+    procedure makeManeuver(dV: double; var orbK: TIorb);
+
+    // функции для маневра
+    function getCorrectAngle(phi : double) : double;
+    function getDistDiff(dv : double; dt, T: integer; photoOrb, satOrb : TSatOrb) : double;
+    function getdV(dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
 implementation
+
+// Находит расстояние между фотографом и КО в заданный момент времени Т
+// (в секундах) при совершении фотографом продольного маневра добавлением
+// скорости dv (м/с). Здесь dt - дискрет времени при прогнозе движения спутников.
+//
+function getDistDiff(dv : double; dt, T: integer; photoOrb, satOrb : TSatOrb) : double;
+var
+    orbK : TIOrb;
+    p, s : TXYZVxVyVz;
+begin
+    orbK := photoOrb.orbK;
+    makeManeuver(dv, orbK);
+
+    prognoz_T(orbK.a, orbK.e, orbK.i,
+              orbK.ra, orbK.ap, orbK.v + orbK.ap,
+              0, T,
+              p.x, p.y, p.z, p.vx, p.vy, p.vz);
+
+    orbK := satOrb.orbK;
+    prognoz_T(orbK.a, orbK.e, orbK.i,
+              orbK.ra, orbK.ap, orbK.v + orbK.ap,
+              0, T,
+              s.x, s.y, s.z, s.vx, s.vy, s.vz);
+    result := distanceBetweenSatellites(p, s, dt);
+end;
+
+function getCorrectAngle(phi : double) : double;
+begin
+    if phi < -pi then begin
+        while (phi < -pi) do begin
+            phi := phi + 2 * pi;
+        end;
+    end;
+
+    if phi >= pi then begin
+        while (phi >= pi) do begin
+            phi := phi - 2 * pi;
+        end;
+    end;
+
+    result := phi;
+end;
+
+// Функция вычисляет необходимое приращение по скорости для фотографа,
+// чтобы сблизиться с КО через время T секунд от начального момента (0 секунд).
+// Предполагается, что в момент T КО находился на линии узлов (или очень близко к ней)
+//
+// Параметры:
+//      dt - дискрет времени при прогнозе движения спутников (в секундах)
+//      T - момент времени (в секундах), на который производится сближение фотографа и КО
+//      photoOrb, satOrb - векторы состояния фотографа и КО соответственно
+//
+function getdV(dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
+var
+    dv, distDiff : double;
+begin
+    dv := -5;
+    while dv <= 5 do begin
+        distDiff := getDistDiff(dv, dt, T, photoOrb, satOrb);
+        if distDiff < 50 then break;
+
+        dv := dv + 0.01;
+    end;
+
+    if (dv = 5) and (distDiff > 50) then result := 0
+    else result := dv;
+end;
+
+// Процедура выполняет продольный маневр КО
+//
+// Входные параметры:
+// dV - величина приращения по скорости в м/с (может быть <0)
+// orbK - вектор состояния КО в кеплеровых координатах
+procedure makeManeuver(dV: double; var orbK: TIorb);
+var
+    orbX: TXYZVxVyVz;
+    v: double; // скорость КО
+begin
+    KeplerToGNSK(orbK, orbX);
+    v := vectorModulus(orbX.vel);
+    orbX.vx := orbX.vx * (1 + dV * 1e-3/v);
+    orbX.vy := orbX.vy * (1 + dV * 1e-3/v);
+    orbX.vz := orbX.vz * (1 + dV * 1e-3/v);
+    GNSKToKepler(orbX, orbK);
+end;
 
 // Функция рассчитывает расстояние между двумя КО, положение которых измеряется
 // каждые dt секунд. Если за время dt достигалось минимальное расстояние между
@@ -167,6 +263,7 @@ begin
         satOrbsTemp[isat].orbK.RA := catDataBase.cat_dvu[isat] * pi / 180;
         satOrbsTemp[isat].orbK.V  := catDataBase.cat_argsh[isat] * pi / 180 - catDataBase.cat_argp[isat] * pi / 180;
         satOrbsTemp[isat].Kdelta  := catDataBase.cat_bal[isat];
+        satOrbsTemp[isat].id := isat;
 
         // Дата, время, юлианская дата, в который измерили вектор состояния КО
         dmy := catDataBase.cat_dmy[isat];
@@ -203,4 +300,69 @@ begin
 
     catDataBase.Destroy;
 end;
+
+function dateForLog() : String;
+var
+    dttm : TDateTime;
+    year, month, day, hour, min, sec, msec : word;
+begin
+    dttm := Now;
+    DecodeDate(dttm, Year, Month, Day);
+    DecodeTime(dttm, Hour, Min, Sec, MSec);
+
+
+    result := IntToStr(year) + IntToStr(month) + IntToStr(day)
+              + '_' + IntToStr(hour) + IntToStr(min) + IntToStr(sec);
+end;
+
+// Функция рассчитывает эксцентрическую аномалию по истинной аномалии и
+// эксцентриситету
+function calculateEa(orbK: TIOrb) : double;
+var
+    e, v, cosEa, sinEa: double;
+begin
+    v := orbK.v;
+    e := orbK.e;
+    cosEa := (cos(v) + e)/(1 + e * cos(v));
+    sinEa := sin(v) * sqrt(1 - e*e)/(1 + e * cos(v));
+    result := ArcTan2(sinEa, cosEa);
+end;
+
+// Функция рассчитывает время полета спутника от v = v1 до v = v2
+function timeBetweenDifferentV(orbK: TIorb; v1, v2: double) : double;
+var
+    T : double;
+    Ea1, Ea2, e: double;
+begin
+    while (v1 > 2 * pi) do v1 := v1 - 2*pi;
+    while (v1 < -2 * pi) do v1 := v1 + 2*pi;
+    while (v2 > 2 * pi) do v2 := v2 - 2*pi;
+    while (v2 < -2 * pi) do v2 := v2 + 2*pi;
+
+    T := 2 * pi * sqrt(orbK.a*orbK.a*orbK.a/GM_km);
+    e := orbK.e;
+
+    orbK.v := v1;
+    Ea1 := calculateEa(orbK);
+    orbK.v := v2;
+    Ea2 := calculateEa(orbK);
+
+    if v2 >= v1 then begin
+        result := T/(2*pi)*((Ea2 - e*sin(Ea2)) - (Ea1 - e*sin(Ea1)));
+    end else begin
+        result := T - abs(T/(2*pi)*((Ea2 - e*sin(Ea2)) - (Ea1 - e*sin(Ea1))));
+    end;
+end;
+
+// Функция для задания кеплеровой орбиты
+function setKeplerOrb(a, e, i, ap, ra, v : double) : TIorb;
+begin
+    result.a := a;
+    result.e := e;
+    result.i := i;
+    result.ap := ap;
+    result.ra := ra;
+    result.v := v;
+end;
+
 end.

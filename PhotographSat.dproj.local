@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.839,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.685,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.543,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.992,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.791,C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas=D:\Lagrange\projects\PhotographSat\Photograph.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.381,C:\Users\Админ\Documents\RAD Studio\Projects\Project6.dproj=D:\Lagrange\projects\PhotographSat\PhotographSat.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.791,C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.dfm=D:\Lagrange\projects\PhotographSat\Photograph.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.685,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.839,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.791,D:\Lagrange\projects\PhotographSat\Photograph.pas=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.216,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
-    <Transaction>2016.10.08 12:50:47.793,=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\satProc.pas</Transaction>
-    <Transaction>2016.10.08 12:51:04.459,C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\satProc.pas=</Transaction>
-    <Transaction>2016.10.08 12:51:15.310,=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\Unit1.pas</Transaction>
-    <Transaction>2016.10.08 12:51:41.482,C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\sat_proc.pas=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.992,=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.791,D:\Lagrange\projects\PhotographSat\Photograph.dfm=C:\Users\Админ\Documents\RAD Studio\Projects\Unit4.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.482,C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\Unit1.pas=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\sat_proc.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.310,=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.459,C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\satProc.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.793,=C:\Users\Эмиль\Documents\Embarcadero\Studio\Projects\Lagrange\projects\PhotographSat\satProc.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.381,D:\Lagrange\projects\PhotographSat\PhotographSat.dproj=C:\Users\Админ\Documents\RAD Studio\Projects\Project6.dproj</Transaction>
   </Transactions>
 </BorlandProject>
