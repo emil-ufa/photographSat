@@ -12,6 +12,8 @@ object Form4: TForm4
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  ExplicitWidth = 320
+  ExplicitHeight = 240
   PixelsPerInch = 96
   TextHeight = 13
   object maxDistanceLabel: TLabel
@@ -52,8 +54,8 @@ object Form4: TForm4
   object spottedSatListLabel: TLabel
     Left = 1032
     Top = 104
-    Width = 353
-    Height = 26
+    Width = 320
+    Height = 13
     Caption = #1057#1087#1080#1089#1086#1082' '#1089#1092#1086#1090#1086#1075#1088#1072#1092#1080#1088#1086#1074#1072#1085#1085#1099#1093' '#1050#1054' ('#1076#1077#1085#1100', id '#1050#1054', '#1074#1088#1077#1084#1103' '#1086#1090#1084#1077#1090#1082#1080')'
     WordWrap = True
   end

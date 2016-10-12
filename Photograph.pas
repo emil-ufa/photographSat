@@ -147,12 +147,12 @@ begin
                 // и что сближение произойдет в течение 3 суток с начала прогноза
                 if ( ((abs(r11 - r21) < maxDist) and (abs(satOrbTemp.v - p21) < dPhi))
                 or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
-                and (distBetweenSats < 500) and (seconds/3600/24 < 3) then begin
+                and (distBetweenSats < 4000) and (seconds/3600/24 < 3) then begin
                     setLength(possMeetMoments, length(possMeetMoments) + 1);
                     possMeetMoments[length(possMeetMoments) - 1].sat := satOrbs[isat];
                     possMeetMoments[length(possMeetMoments) - 1].T := seconds;
                     possMeetMoments[length(possMeetMoments) - 1].dv :=
-                        getdV(5, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
+                        getdV(30, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
                 end;
             end;
 
