@@ -6,8 +6,7 @@ uses
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, VCLTee.TeEngine,
     VCLTee.Series, Vcl.ExtCtrls, VCLTee.TeeProcs, VCLTee.Chart, Vcl.ComCtrls, System.DateUtils,
     Bal_Types, anomal, astronom, deftorm, numint, atmos, CatDB, precpred, pg_type, math,
-    NoradDB, orbint, sgp_h, Lagrange, VCLTee.GanttCh, prognozt, sat_proc, VclTee.TeeGDIPlus,
-  Data.DB, Datasnap.DBClient, SimpleDS;
+    NoradDB, orbint, sgp_h, Lagrange, VCLTee.GanttCh, prognozt, sat_proc, VclTee.TeeGDIPlus;
 
 type
     TForm4 = class(TForm)
@@ -26,6 +25,10 @@ type
     predictionTime: TEdit;
     speedStorageLabel: TLabel;
     maneuverIsActive: TCheckBox;
+    distLimit: TEdit;
+    maxSpeedChange: TEdit;
+    distLimitLabel: TLabel;
+    maxSpeedChangeLabel: TLabel;
         {Запускает программу построения диаграммы}
         procedure startButtonClick(Sender: TObject);
         private
@@ -65,11 +68,13 @@ var
     satsAreMet : Boolean; // True, если за промежуток в 4 дня есть сфотканные КО
     possMeetMoments : array of TSatMeeting;
     dPhi : double; // в каком диапазоне угла искать КО при пролете его через линию узлов
-    maxDist, seconds : Integer;
+    maxDist, seconds, maxDistForManeuver, maxSpeedChangeForManeuver : Integer;
 begin
     // Считаем дискрет времени и максимальное расстояние для фотографирования
     dt := StrToInt(timeSample.Text);
     maxDist := StrToInt(maxDistance.Text);
+    maxDistForManeuver := StrToInt(maxDistance.Text);
+    maxSpeedChangeForManeuver := StrToInt(maxSpeedChange.Text);
 
     // Зададим базу КО
     initSatDatabase('..\..\additional files\', 'orbvnoko150101', satOrbs);
@@ -147,12 +152,12 @@ begin
                 // и что сближение произойдет в течение 3 суток с начала прогноза
                 if ( ((abs(r11 - r21) < maxDist) and (abs(satOrbTemp.v - p21) < dPhi))
                 or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
-                and (distBetweenSats < 4000) and (seconds/3600/24 < 3) then begin
+                and (distBetweenSats < maxDistForManeuver) and (seconds/3600/24 < 3) then begin
                     setLength(possMeetMoments, length(possMeetMoments) + 1);
                     possMeetMoments[length(possMeetMoments) - 1].sat := satOrbs[isat];
                     possMeetMoments[length(possMeetMoments) - 1].T := seconds;
                     possMeetMoments[length(possMeetMoments) - 1].dv :=
-                        getdV(30, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
+                        getManeuverSpeedChange(maxSpeedChangeForManeuver, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
                 end;
             end;
 
@@ -272,8 +277,8 @@ begin
         end;
     end;
 
-
-    spottedSatList.Items.Add('Итого сфотографировано ' + IntToStr(metSatNum) + ' КО');
+    spottedSatList.Items.Add('Итого сфотографировано: ' + IntToStr(metSatNum) + ' КО');
+    spottedSatList.Items.Add('Запас характеристической скорости: ' + FloatToStrF(dvStorage, ffFixed, 4, 2) + ' м/с');
     spottedSatList.Items.SaveToFile('../../results/spotted_sat_log_' + dateForLog + '.txt');
 
     while not clearDiagrams.Checked do begin

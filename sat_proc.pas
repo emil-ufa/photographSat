@@ -34,7 +34,7 @@ type
     // функции для маневра
     function getCorrectAngle(phi : double) : double;
     function getDistDiff(dv : double; dt, T: integer; photoOrb, satOrb : TSatOrb) : double;
-    function getdV(dvMax, maxDistDiff, dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
+    function getManeuverSpeedChange(dvMax, maxDistDiff, dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
 implementation
 
 // Находит расстояние между фотографом и КО в заданный момент времени Т
@@ -88,7 +88,7 @@ end;
 //      T - момент времени (в секундах), на который производится сближение фотографа и КО
 //      photoOrb, satOrb - векторы состояния фотографа и КО соответственно
 //
-function getdV(dvMax, maxDistDiff, dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
+function getManeuverSpeedChange(dvMax, maxDistDiff, dt, T : Integer; photoOrb, satOrb : TSatOrb) : double;
 var
     dv, distDiff : double;
 begin

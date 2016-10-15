@@ -12,8 +12,6 @@ object Form4: TForm4
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  ExplicitWidth = 320
-  ExplicitHeight = 240
   PixelsPerInch = 96
   TextHeight = 13
   object maxDistanceLabel: TLabel
@@ -65,6 +63,22 @@ object Form4: TForm4
     Width = 216
     Height = 13
     Caption = #1047#1072#1087#1072#1089' '#1093#1072#1088#1072#1082#1090#1077#1088#1080#1089#1090#1080#1095#1077#1089#1082#1086#1081' '#1089#1082#1086#1088#1086#1089#1090#1080', '#1084'/'#1089': '
+  end
+  object distLimitLabel: TLabel
+    Left = 453
+    Top = 8
+    Width = 172
+    Height = 26
+    Caption = 'Max '#1088#1072#1089#1089#1090#1086#1103#1085#1080#1077' '#1084'/'#1091' '#1092#1086#1090#1086#1075#1088#1072#1092#1086#1084' '#1080' '#1050#1054' '#1076#1083#1103' '#1089#1073#1083#1080#1078#1077#1085#1080#1103', '#1082#1084
+    WordWrap = True
+  end
+  object maxSpeedChangeLabel: TLabel
+    Left = 631
+    Top = 8
+    Width = 137
+    Height = 26
+    Caption = 'Max '#1080#1079#1084#1077#1085#1077#1085#1080#1077' '#1089#1082#1086#1088#1086#1089#1090#1080' '#1087#1088#1080' '#1084#1072#1085#1077#1074#1088#1077', '#1084'/'#1089
+    WordWrap = True
   end
   object startButton: TButton
     Left = 840
@@ -167,5 +181,21 @@ object Form4: TForm4
     Caption = #1040#1082#1090#1080#1074#1085#1099#1081' '#1088#1077#1078#1080#1084' ('#1089' '#1084#1072#1085#1077#1074#1088#1072#1084#1080')'
     TabOrder = 7
     WordWrap = True
+  end
+  object distLimit: TEdit
+    Left = 453
+    Top = 35
+    Width = 137
+    Height = 21
+    TabOrder = 8
+    Text = '4000'
+  end
+  object maxSpeedChange: TEdit
+    Left = 631
+    Top = 35
+    Width = 137
+    Height = 21
+    TabOrder = 9
+    Text = '5'
   end
 end
