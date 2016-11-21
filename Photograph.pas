@@ -11,24 +11,22 @@ uses
 type
     TForm4 = class(TForm)
     startButton: TButton;
-    Chart1: TChart;
-    Series1: TPointSeries;
     maxDistance: TEdit;
     maxDistanceLabel: TLabel;
     timeSampleLabel: TLabel;
     timeSample: TEdit;
-    predictionTimeLabel: TLabel;
     clearDiagrams: TCheckBox;
     currentPredictionDay: TLabel;
     spottedSatListLabel: TLabel;
     spottedSatList: TListBox;
-    predictionTime: TEdit;
     speedStorageLabel: TLabel;
     maneuverIsActive: TCheckBox;
     distLimit: TEdit;
     maxSpeedChange: TEdit;
     distLimitLabel: TLabel;
     maxSpeedChangeLabel: TLabel;
+    speedStorage: TEdit;
+    speedLabel: TLabel;
         {Запускает программу построения диаграммы}
         procedure startButtonClick(Sender: TObject);
         private
@@ -43,7 +41,6 @@ var
 implementation
 {$R *.dfm}
 
-
 procedure TForm4.startButtonClick(Sender: TObject);
 var
     spottedSatFile : system.Text;
@@ -57,7 +54,6 @@ var
     stepNum: integer;
     spaceNum, spaceCount: integer;
     Xstart, Xend: TXYZVxVyVz;
-    satMeetingSeries : array of TPointSeries;
     wasCloseToPhotograph: array of boolean; // запись того, с какими КО было сближение фотографа
     distBetweenSats, R: Double;
     dt, satNumber, metSatNum, satNumMetPerDt, predictionDays: Integer;
@@ -73,31 +69,18 @@ begin
     // Считаем дискрет времени и максимальное расстояние для фотографирования
     dt := StrToInt(timeSample.Text);
     maxDist := StrToInt(maxDistance.Text);
-    maxDistForManeuver := StrToInt(maxDistance.Text);
+    maxDistForManeuver := StrToInt(distLimit.Text);
     maxSpeedChangeForManeuver := StrToInt(maxSpeedChange.Text);
-
+    // стартовый запас характеристической скорости
+    dvStorage := StrToInt(speedStorage.Text);
     // Зададим базу КО
     initSatDatabase('..\..\additional files\', 'orbvnoko150101', satOrbs);
 
     setLength(wasCloseToPhotograph, length(satOrbs));
     satNumber := length(satOrbs);
 
-    setLength(satMeetingSeries,length(satOrbs));
-
-    // создание трендов, изображающих сближения КО
-    for isat := 0 to satNumber - 1 do begin
-        if isat <> 0 then begin
-            satMeetingSeries[isat] := TPointSeries.Create(Self);
-            satMeetingSeries[isat].ParentChart := Chart1;
-            satMeetingSeries[isat].Pointer.Size := 3;
-            satMeetingSeries[isat].Pointer.Style := psCircle;
-        end;
-    end;
-
     // количество сфотканных спутников во время основного прогноза
     metSatNum := 0;
-    // стартовый запас характеристической скорости
-    dvStorage := 100.0;
     // задаем начальный вектор состояния спутника-фотографа
     photoOrb := satOrbs[0];
     // цикл по 3-дневным запускам (122 запуска - т.е. на 366 дней)
@@ -110,16 +93,14 @@ begin
         stepNum := 1;
         seconds := 0;
 
-        // При пассивном облете "разведовательного" прогноза не происходит
-        if maneuverIsActive.Checked then satsAreMet := False
-        else satsAreMet := True;
-
-
         // Делаем "разведывательный" прогноз на 4 дня - чтобы понять:
         //      а. были ли сфотканные КО за это время
         //      б. были ли какие-то КО, для встречи с которыми можно проманеврировать
         while (stepNum <= 4 * 24 * 3600/dt) do begin
             seconds := stepNum * dt;
+
+            // При пассивном полете маневров не происходит
+            if not maneuverIsActive.Checked then break;
 
             prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
                       photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
@@ -148,7 +129,7 @@ begin
 
                 // момент, в который КО проходит через линию узлов, и орбиты фотографа и КО
                 // сближены по линии узлов на расстояние < maxDist км
-                // Также проверяется, что в расфазировка слабая (расстояние между КО < 500 км),
+                // Также проверяется, что в расфазировка слабая (расстояние между КО < ... км),
                 // и что сближение произойдет в течение 3 суток с начала прогноза
                 if ( ((abs(r11 - r21) < maxDist) and (abs(satOrbTemp.v - p21) < dPhi))
                 or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
@@ -169,7 +150,7 @@ begin
         // маневрируем, только если за 4 дня нет сфотканных спутников,
         // а запас характеристической скорости позволяет маневрировать
         if (not satsAreMet) and (dvStorage > 0) then begin
-            minDv := 5;
+            minDv := maxSpeedChangeForManeuver;
             minIsat := 0;
 
             // находим минимальный сдвиг по скорости для маневра
@@ -182,15 +163,13 @@ begin
                 end;
             end;
 
-            // маневрируем только в активном режиме (пассивный режим - без маневров)
-            if maneuverIsActive.Checked then begin
-                if (minDv <> 5) and (minIsat <> 0) then begin
-                    makeManeuver(minDv, photoOrb.orbK);
-                    dvStorage := dvStorage - abs(minDv);
-                    spottedSatList.Items.Add('Начало дня ' + IntToStr(i * 3 + 1) + ', маневрируем с dV = '
-                                            + FloatToStrF(minDv, ffFixed, 4, 2) + 'к КО с номером '
-                                            + IntToStr(minIsat));
-                end;
+            // маневрируем только в активном режиме
+            if maneuverIsActive.Checked and (minDv <> maxSpeedChangeForManeuver) and (minIsat <> 0) then begin
+                makeManeuver(minDv, photoOrb.orbK);
+                dvStorage := dvStorage - abs(minDv);
+                spottedSatList.Items.Add('Начало дня ' + IntToStr(i * 3 + 1) + ', маневрируем с dV = '
+                                        + FloatToStrF(minDv, ffFixed, 4, 2) + 'к КО с номером '
+                                        + IntToStr(minIsat));
             end;
         end;
 
@@ -222,8 +201,6 @@ begin
                 distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
 
                 if distBetweenSats <= maxDist then begin
-                    satMeetingSeries[isat].AddXY(3 * i + seconds * 1.0 / 86400, satOrbs[isat].id, '', clGreen);
-
                     if not wasCloseToPhotograph[satOrbs[isat].id] then begin
                         wasCloseToPhotograph[satOrbs[isat].id] := True;
                         spottedSatList.Items.Add(IntToStr(3 * i + 1 + (seconds) div 86400) + '|'
@@ -288,7 +265,6 @@ begin
     if clearDiagrams.Checked then begin
         for isat := 0 to length(satOrbs) - 1 do begin
             if isat <> 0 then begin
-                satMeetingSeries[isat].Destroy;
                 spottedSatList.Clear;
                 currentPredictionDay.Caption := '';
             end;
