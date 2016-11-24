@@ -135,8 +135,7 @@ begin
                 or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
                 and (distBetweenSats < maxDistForManeuver) and (seconds/3600/24 < 3) then begin
                     setLength(possMeetMoments, length(possMeetMoments) + 1);
-                    possMeetMoments[length(possMeetMoments) - 1].sat := satOrbs[isat];
-                    possMeetMoments[length(possMeetMoments) - 1].T := seconds;
+                    possMeetMoments[length(possMeetMoments) - 1].satID := satOrbs[isat].id;
                     possMeetMoments[length(possMeetMoments) - 1].dv :=
                         getManeuverSpeedChange(maxSpeedChangeForManeuver, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
                 end;
@@ -159,7 +158,7 @@ begin
                 and (abs(possMeetMoments[j].dv) < minDv)
                 and (abs(possMeetMoments[j].dv) < dvStorage) then begin
                     minDv := possMeetMoments[j].dv;
-                    minIsat := possMeetMoments[j].sat.id;
+                    minIsat := possMeetMoments[j].satID;
                 end;
             end;
 
@@ -256,7 +255,11 @@ begin
 
     spottedSatList.Items.Add('Итого сфотографировано: ' + IntToStr(metSatNum) + ' КО');
     spottedSatList.Items.Add('Запас характеристической скорости: ' + FloatToStrF(dvStorage, ffFixed, 4, 2) + ' м/с');
-    spottedSatList.Items.SaveToFile('../../results/spotted_sat_log_' + dateForLog + '.txt');
+    if not maneuverIsActive.Checked then
+        spottedSatList.Items.SaveToFile('../../results/D_' + maxDistance.Text + '_passive' +'.txt')
+    else
+        spottedSatList.Items.SaveToFile('../../results/D_' + maxDistance.Text + '_dV_'
+                                        + maxSpeedChange.Text + '_R_' + distLimit.Text +'.txt');
 
     while not clearDiagrams.Checked do begin
         Application.ProcessMessages;
