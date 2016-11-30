@@ -65,213 +65,239 @@ var
     possMeetMoments : array of TSatMeeting;
     dPhi : double; // в каком диапазоне угла искать КО при пролете его через линию узлов
     maxDist, seconds, maxDistForManeuver, maxSpeedChangeForManeuver : Integer;
+    bigI, bigD, bigdR, bigdV: integer;
 begin
-    // Считаем дискрет времени и максимальное расстояние для фотографирования
-    dt := StrToInt(timeSample.Text);
-    maxDist := StrToInt(maxDistance.Text);
-    maxDistForManeuver := StrToInt(distLimit.Text);
-    maxSpeedChangeForManeuver := StrToInt(maxSpeedChange.Text);
-    // стартовый запас характеристической скорости
-    dvStorage := StrToInt(speedStorage.Text);
-    // Зададим базу КО
-    initSatDatabase('..\..\additional files\', 'orbvnoko150101', satOrbs);
-
-    setLength(wasCloseToPhotograph, length(satOrbs));
-    satNumber := length(satOrbs);
-
-    // количество сфотканных спутников во время основного прогноза
-    metSatNum := 0;
-    // задаем начальный вектор состояния спутника-фотографа
-    photoOrb := satOrbs[0];
-    // цикл по 3-дневным запускам (122 запуска - т.е. на 366 дней)
-    for i := 0 to 121 do begin
-        speedStorageLabel.Caption := 'Запас характеристической скорости, м/с: '
-                                    + FloatToStrF(dvStorage, ffFixed, 4, 2);
-        Application.ProcessMessages; // обновим окно
-        satsAreMet := False;
+    for bigI := 1 to 18 do begin
+        spottedSatList.Clear;
+        currentPredictionDay.Caption := '';
+        setLength(satOrbs, 0);
         setLength(possMeetMoments, 0);
-        stepNum := 1;
-        seconds := 0;
+        setLength(wasCloseToPhotograph, 0);
 
-        // Делаем "разведывательный" прогноз на 4 дня - чтобы понять:
-        //      а. были ли сфотканные КО за это время
-        //      б. были ли какие-то КО, для встречи с которыми можно проманеврировать
-        while (stepNum <= 4 * 24 * 3600/dt) do begin
-            seconds := stepNum * dt;
+        if bigI =      1 then begin bigD := 50; bigdR := 500; bigdV := 1; end
+		else if bigI = 2 then begin bigD := 50; bigdR := 500; bigdV := 5; end
+		else if bigI = 3 then begin bigD := 50; bigdR := 500; bigdV := 10; end
+		else if bigI = 4 then begin bigD := 50; bigdR := 500; bigdV := 30; end
+		else if bigI = 5 then begin bigD := 50; bigdR := 5000; bigdV := 1; end
+		else if bigI = 6 then begin bigD := 50; bigdR := 5000; bigdV := 5; end
+		else if bigI = 7 then begin bigD := 50; bigdR := 5000; bigdV := 10; end
+		else if bigI = 8 then begin bigD := 50; bigdR := 5000; bigdV := 30; end
+		else if bigI = 9 then begin bigD := 50; bigdR := 1000000; bigdV := 1; end
+		else if bigI = 10 then begin bigD := 50; bigdR := 1000000; bigdV := 5; end
+		else if bigI = 11 then begin bigD := 50; bigdR := 1000000; bigdV := 10; end
+		else if bigI = 12 then begin bigD := 50; bigdR := 1000000; bigdV := 30; end;
 
-            // При пассивном полете маневров не происходит
-            if not maneuverIsActive.Checked then break;
+        // Считаем дискрет времени и максимальное расстояние для фотографирования
+        dt := StrToInt(timeSample.Text);
+//        maxDist := StrToInt(maxDistance.Text);
+//        maxDistForManeuver := StrToInt(distLimit.Text);
+//        maxSpeedChangeForManeuver := StrToInt(maxSpeedChange.Text);
+        maxDist := bigD;
+        maxDistForManeuver := bigdR;
+        maxSpeedChangeForManeuver := bigdV;
+        // стартовый запас характеристической скорости
+        dvStorage := StrToInt(speedStorage.Text);
+        // Зададим базу КО
+        initSatDatabase('..\..\additional files\', 'orbvnoko150101', satOrbs);
 
-            prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
-                      photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
-                      0, seconds,
-                      photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
-                      photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
-            GNSKToKepler(photoOrb.orbX, photoOrbTemp);
+        setLength(wasCloseToPhotograph, length(satOrbs));
+        satNumber := length(satOrbs);
 
-            for isat := 1 + metSatNum to satNumber - 1 do begin
-                prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
-                          satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+        // количество сфотканных спутников во время основного прогноза
+        metSatNum := 0;
+        // задаем начальный вектор состояния спутника-фотографа
+        photoOrb := satOrbs[0];
+        // цикл по 3-дневным запускам (122 запуска - т.е. на 366 дней)
+        for i := 0 to 121 do begin
+            speedStorageLabel.Caption := 'Запас характеристической скорости, м/с: '
+                                        + FloatToStrF(dvStorage, ffFixed, 4, 2);
+            Application.ProcessMessages; // обновим окно
+            satsAreMet := False;
+            setLength(possMeetMoments, 0);
+            stepNum := 1;
+            seconds := 0;
+
+            // Делаем "разведывательный" прогноз на 4 дня - чтобы понять:
+            //      а. были ли сфотканные КО за это время
+            //      б. были ли какие-то КО, для встречи с которыми можно проманеврировать
+            while (stepNum <= 4 * 24 * 3600/dt) do begin
+                seconds := stepNum * dt;
+
+                // При пассивном полете маневров не происходит
+                if not maneuverIsActive.Checked then break;
+
+                prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
+                          photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
                           0, seconds,
-                          satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
-                          satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
-                GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
+                          photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
+                          photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
+                GNSKToKepler(photoOrb.orbX, photoOrbTemp);
 
-                distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
+                for isat := 1 + metSatNum to satNumber - 1 do begin
+                    prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
+                              satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+                              0, seconds,
+                              satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
+                              satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
+                    GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
 
-                if distBetweenSats <= maxDist then begin
-                    satsAreMet := True;
-                    break;
-                end;
+                    distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
 
-                dPhi := vectorModulus(satOrbs[isat].orbX.vel) * dt / satOrbs[isat].orbK.a;
-                minDistanceBetweenOrbits(photoOrbTemp, satOrbTemp, r11, r12, r21, r22, p11, p12, p21, p22);
+                    if distBetweenSats <= maxDist then begin
+                        satsAreMet := True;
+                        break;
+                    end;
 
-                // момент, в который КО проходит через линию узлов, и орбиты фотографа и КО
-                // сближены по линии узлов на расстояние < maxDist км
-                // Также проверяется, что в расфазировка слабая (расстояние между КО < ... км),
-                // и что сближение произойдет в течение 3 суток с начала прогноза
-                if ( ((abs(r11 - r21) < maxDist) and (abs(satOrbTemp.v - p21) < dPhi))
-                or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
-                and (distBetweenSats < maxDistForManeuver) and (seconds/3600/24 < 3) then begin
-                    setLength(possMeetMoments, length(possMeetMoments) + 1);
-                    possMeetMoments[length(possMeetMoments) - 1].satID := satOrbs[isat].id;
-                    possMeetMoments[length(possMeetMoments) - 1].dv :=
-                        getManeuverSpeedChange(maxSpeedChangeForManeuver, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
-                end;
-            end;
+                    dPhi := vectorModulus(satOrbs[isat].orbX.vel) * dt / satOrbs[isat].orbK.a;
+                    minDistanceBetweenOrbits(photoOrbTemp, satOrbTemp, r11, r12, r21, r22, p11, p12, p21, p22);
 
-            if satsAreMet then break;
-
-            inc(stepNum);
-        end;
-
-        // маневрируем, только если за 4 дня нет сфотканных спутников,
-        // а запас характеристической скорости позволяет маневрировать
-        if (not satsAreMet) and (dvStorage > 0) then begin
-            minDv := maxSpeedChangeForManeuver;
-            minIsat := 0;
-
-            // находим минимальный сдвиг по скорости для маневра
-            for j := 0 to length(possMeetMoments) - 1 do begin
-                if (possMeetMoments[j].dv <> 0)
-                and (abs(possMeetMoments[j].dv) < minDv)
-                and (abs(possMeetMoments[j].dv) < dvStorage) then begin
-                    minDv := possMeetMoments[j].dv;
-                    minIsat := possMeetMoments[j].satID;
-                end;
-            end;
-
-            // маневрируем только в активном режиме
-            if maneuverIsActive.Checked and (minDv <> maxSpeedChangeForManeuver) and (minIsat <> 0) then begin
-                makeManeuver(minDv, photoOrb.orbK);
-                dvStorage := dvStorage - abs(minDv);
-                spottedSatList.Items.Add('Начало дня ' + IntToStr(i * 3 + 1) + ', маневрируем с dV = '
-                                        + FloatToStrF(minDv, ffFixed, 4, 2) + 'к КО с номером '
-                                        + IntToStr(minIsat));
-            end;
-        end;
-
-        satNumMetPerDt := 0;
-        stepNum := 1;
-        seconds := 0;
-
-        // основной прогноз на 3 дня
-        while (stepNum <= 3 * 24 * 3600/dt) do begin
-            seconds := stepNum * dt;
-
-            prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
-                      photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
-                      0, seconds,
-                      photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
-                      photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
-            GNSKToKepler(photoOrb.orbX, photoOrbTemp);
-
-            satNumMetPerDt := 0;
-
-            for isat := 1 + metSatNum to satNumber - 1 do begin
-                prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
-                          satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
-                          0, seconds,
-                          satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
-                          satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
-                GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
-
-                distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
-
-                if distBetweenSats <= maxDist then begin
-                    if not wasCloseToPhotograph[satOrbs[isat].id] then begin
-                        wasCloseToPhotograph[satOrbs[isat].id] := True;
-                        spottedSatList.Items.Add(IntToStr(3 * i + 1 + (seconds) div 86400) + '|'
-                                               + IntToStr(satOrbs[isat].id) + '|'
-                                               + DateTimeToStr(Now));
-
-                        inc(satNumMetPerDt);
-
-                        // убираем встреченный КО в начало массива (в прогнозе он больше участвовать не будет)
-                        satTemp := satOrbs[metSatNum + satNumMetPerDt];
-                        satOrbs[metSatNum + satNumMetPerDt] := satOrbs[isat];
-                        satOrbs[isat] := satTemp;
+                    // момент, в который КО проходит через линию узлов, и орбиты фотографа и КО
+                    // сближены по линии узлов на расстояние < maxDist км
+                    // Также проверяется, что в расфазировка слабая (расстояние между КО < ... км),
+                    // и что сближение произойдет в течение 3 суток с начала прогноза
+                    if ( ((abs(r11 - r21) < maxDist) and (abs(satOrbTemp.v - p21) < dPhi))
+                    or ((abs(r12 - r22) < maxDist) and (abs(satOrbTemp.v - p22) < dPhi)) )
+                    and (distBetweenSats < maxDistForManeuver) and (seconds/3600/24 < 3) then begin
+                        setLength(possMeetMoments, length(possMeetMoments) + 1);
+                        possMeetMoments[length(possMeetMoments) - 1].satID := satOrbs[isat].id;
+                        possMeetMoments[length(possMeetMoments) - 1].dv :=
+                            getManeuverSpeedChange(maxSpeedChangeForManeuver, maxDist, dt, seconds, photoOrb, satOrbs[isat]);
                     end;
                 end;
+
+                if satsAreMet then break;
+
+                inc(stepNum);
             end;
 
-            metSatNum := metSatNum + satNumMetPerDt;
+            // маневрируем, только если за 4 дня нет сфотканных спутников,
+            // а запас характеристической скорости позволяет маневрировать
+            if (not satsAreMet) and (dvStorage > 0) then begin
+                minDv := maxSpeedChangeForManeuver;
+                minIsat := 0;
 
-            // Обновляем форму при прогнозе на каждые новые сутки
-            if (seconds mod 86400 = 0) then begin
-                currentPredictionDay.Caption := 'Текущий день прогноза: ' + IntToStr(3 * i + seconds div 86400 + 1)
-                     + sLineBreak + 'Обнаружено КО-в: ' + IntToStr(metSatNum);
-                Application.ProcessMessages;
+                // находим минимальный сдвиг по скорости для маневра
+                for j := 0 to length(possMeetMoments) - 1 do begin
+                    if (possMeetMoments[j].dv <> 0)
+                    and (abs(possMeetMoments[j].dv) < minDv)
+                    and (abs(possMeetMoments[j].dv) < dvStorage) then begin
+                        minDv := possMeetMoments[j].dv;
+                        minIsat := possMeetMoments[j].satID;
+                    end;
+                end;
+
+                // маневрируем только в активном режиме
+                if maneuverIsActive.Checked and (minDv <> maxSpeedChangeForManeuver) and (minIsat <> 0) then begin
+                    makeManeuver(minDv, photoOrb.orbK);
+                    dvStorage := dvStorage - abs(minDv);
+                    spottedSatList.Items.Add('Начало дня ' + IntToStr(i * 3 + 1) + ', маневрируем с dV = '
+                                            + FloatToStrF(minDv, ffFixed, 4, 2) + 'к КО с номером '
+                                            + IntToStr(minIsat));
+                end;
             end;
 
-            if ((seconds div 86400 + 3 * i) = 366) then begin
-                currentPredictionDay.Caption := currentPredictionDay.Caption + sLineBreak + 'ПРОГНОЗ ОКОНЧЕН';
+            satNumMetPerDt := 0;
+            stepNum := 1;
+            seconds := 0;
+
+            // основной прогноз на 3 дня
+            while (stepNum <= 3 * 24 * 3600/dt) do begin
+                seconds := stepNum * dt;
+
+                prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
+                          photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
+                          0, seconds,
+                          photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
+                          photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
+                GNSKToKepler(photoOrb.orbX, photoOrbTemp);
+
+                satNumMetPerDt := 0;
+
+                for isat := 1 + metSatNum to satNumber - 1 do begin
+                    prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
+                              satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+                              0, seconds,
+                              satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
+                              satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
+                    GNSKToKepler(satOrbs[isat].orbX, satOrbTemp);
+
+                    distBetweenSats := distanceBetweenSatellites(satOrbs[isat].orbX, photoOrb.orbX, dt);
+
+                    if distBetweenSats <= maxDist then begin
+                        if not wasCloseToPhotograph[satOrbs[isat].id] then begin
+                            wasCloseToPhotograph[satOrbs[isat].id] := True;
+                            spottedSatList.Items.Add(IntToStr(3 * i + 1 + (seconds) div 86400) + '|'
+                                                   + IntToStr(satOrbs[isat].id) + '|'
+                                                   + DateTimeToStr(Now));
+
+                            inc(satNumMetPerDt);
+
+                            // убираем встреченный КО в начало массива (в прогнозе он больше участвовать не будет)
+                            satTemp := satOrbs[metSatNum + satNumMetPerDt];
+                            satOrbs[metSatNum + satNumMetPerDt] := satOrbs[isat];
+                            satOrbs[isat] := satTemp;
+                        end;
+                    end;
+                end;
+
+                metSatNum := metSatNum + satNumMetPerDt;
+
+                // Обновляем форму при прогнозе на каждые новые сутки
+                if (seconds mod 86400 = 0) then begin
+                    currentPredictionDay.Caption := 'Текущий день прогноза: ' + IntToStr(3 * i + seconds div 86400 + 1)
+                         + sLineBreak + 'Обнаружено КО-в: ' + IntToStr(metSatNum);
+                    Application.ProcessMessages;
+                end;
+
+                if ((seconds div 86400 + 3 * i) = 366) then begin
+                    currentPredictionDay.Caption := currentPredictionDay.Caption + sLineBreak + 'ПРОГНОЗ ОКОНЧЕН';
+                end;
+
+                inc(stepNum);
             end;
 
-            inc(stepNum);
-        end;
-
-        // прогнозируем вектор состояния фотографа на 3 дня вперед
-        prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
-                  photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
-                  0, 3 * 24 * 3600,
-                  photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
-                  photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
-        GNSKToKepler(photoOrb.orbX, photoOrb.orbK);
-        photoOrb.JDDouble := photoOrb.JDDouble + 3;
-
-        // прогнозируем векторы состояния КО на 3 дня вперед
-        for isat := 1 to satNumber - 1 do begin
-            prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
-                      satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+            // прогнозируем вектор состояния фотографа на 3 дня вперед
+            prognoz_T(photoOrb.orbK.a, photoOrb.orbK.e, photoOrb.orbK.i,
+                      photoOrb.orbK.ra, photoOrb.orbK.ap, photoOrb.orbK.v + photoOrb.orbK.ap,
                       0, 3 * 24 * 3600,
-                      satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
-                      satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
-            GNSKToKepler(satOrbs[isat].orbX, satOrbs[isat].orbK);
-            satOrbs[isat].JDDouble := satOrbs[isat].JDDouble + 3;
-        end;
-    end;
+                      photoOrb.orbX.x, photoOrb.orbX.y, photoOrb.orbX.z,
+                      photoOrb.orbX.vx, photoOrb.orbX.vy, photoOrb.orbX.vz);
+            GNSKToKepler(photoOrb.orbX, photoOrb.orbK);
+            photoOrb.JDDouble := photoOrb.JDDouble + 3;
 
-    spottedSatList.Items.Add('Итого сфотографировано: ' + IntToStr(metSatNum) + ' КО');
-    spottedSatList.Items.Add('Запас характеристической скорости: ' + FloatToStrF(dvStorage, ffFixed, 4, 2) + ' м/с');
-    if not maneuverIsActive.Checked then
-        spottedSatList.Items.SaveToFile('../../results/D_' + maxDistance.Text + '_passive' +'.txt')
-    else
-        spottedSatList.Items.SaveToFile('../../results/D_' + maxDistance.Text + '_dV_'
-                                        + maxSpeedChange.Text + '_R_' + distLimit.Text +'.txt');
-
-    while not clearDiagrams.Checked do begin
-        Application.ProcessMessages;
-    end;
-
-    if clearDiagrams.Checked then begin
-        for isat := 0 to length(satOrbs) - 1 do begin
-            if isat <> 0 then begin
-                spottedSatList.Clear;
-                currentPredictionDay.Caption := '';
+            // прогнозируем векторы состояния КО на 3 дня вперед
+            for isat := 1 to satNumber - 1 do begin
+                prognoz_T(satOrbs[isat].orbK.a, satOrbs[isat].orbK.e, satOrbs[isat].orbK.i,
+                          satOrbs[isat].orbK.ra, satOrbs[isat].orbK.ap, satOrbs[isat].orbK.v + satOrbs[isat].orbK.ap,
+                          0, 3 * 24 * 3600,
+                          satOrbs[isat].orbX.x, satOrbs[isat].orbX.y, satOrbs[isat].orbX.z,
+                          satOrbs[isat].orbX.vx, satOrbs[isat].orbX.vy, satOrbs[isat].orbX.vz);
+                GNSKToKepler(satOrbs[isat].orbX, satOrbs[isat].orbK);
+                satOrbs[isat].JDDouble := satOrbs[isat].JDDouble + 3;
             end;
         end;
+
+        spottedSatList.Items.Add('Итого сфотографировано: ' + IntToStr(metSatNum) + ' КО');
+        spottedSatList.Items.Add('Запас характеристической скорости: ' + FloatToStrF(dvStorage, ffFixed, 4, 2) + ' м/с');
+        if not maneuverIsActive.Checked then
+            spottedSatList.Items.SaveToFile('../../results/D_' + maxDistance.Text + '_passive' +'.txt')
+        else
+            spottedSatList.Items.SaveToFile('../../results/D_' + IntToStr(bigD)
+                                            + '_dR_' + IntToStr(bigdR)
+                                            + '_dV_' + IntToStr(bigdV) +'.txt');
+
+//        while not clearDiagrams.Checked do begin
+//            Application.ProcessMessages;
+//        end;
+//
+//        if clearDiagrams.Checked then begin
+//            for isat := 0 to length(satOrbs) - 1 do begin
+//                if isat <> 0 then begin
+//                    spottedSatList.Clear;
+//                    currentPredictionDay.Caption := '';
+//                end;
+//            end;
+//        end;
     end;
 end;
 
